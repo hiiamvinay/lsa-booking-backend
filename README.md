@@ -1,185 +1,649 @@
-# LSA Booking Backend
+# LSA Service Booking Backend
 
-Backend service for managing Learning Support Assistant (LSA) discovery and booking. The project is built with Flask, SQLAlchemy, and Alembic, and currently includes the core data model, database migration, and seed data needed to start implementing the API layer.
+Production-style REST API for managing Learning Support Assistant (LSA) discovery, booking, and payment workflows.
 
-## Current Status
+The project is built as a Flask backend with PostgreSQL and SQLAlchemy. It demonstrates relational data modeling, REST API design, booking conflict prevention, third-party payment integration, webhook-driven state transitions, automated testing, logging, migrations, and GitHub Actions CI.
 
-This repository is in the foundation stage.
+> **Frontend:** This repository is backend-only. No frontend application is included.
 
-Implemented today:
-- Flask application factory setup
-- SQLAlchemy and Flask-Migrate integration
-- Core models for `Parent`, `LSAProfile`, `Skill`, `LSASkill`, and `BookingRequest`
-- Initial Alembic migration
-- Seed script for sample parents, LSAs, and skills
+---
 
-Planned next:
-- REST API endpoints for booking and LSA search
-- Business logic for overlap prevention
-- Validation and error handling
-- Tests
-- Mock payment integration and webhook flow if required by the assignment
+## Quick Navigation
 
-## Problem Statement
+- [Features](#features)
+- [Architecture](#architecture)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Database Setup](#database-setup)
+- [Migrations](#migrations)
+- [Seed Data](#seed-data)
+- [Run the API](#run-the-api)
+- [Run Tests](#run-tests)
+- [CI](#ci)
+- [API Overview](#api-overview)
+- [Technical Documentation](#technical-documentation)
+- [Git Workflow](#git-workflow)
+- [Security](#security)
 
-Parents need a reliable way to find LSAs with the right skills and request time-bound bookings without creating conflicting schedules. This backend is intended to support:
-- LSA profile discovery
-- Skill-based filtering
-- Booking request creation
-- Double-booking prevention
-- Clean persistence and migration workflow
+---
 
-## Tech Stack
+## Features
 
-- Python
-- Flask
-- Flask-SQLAlchemy
-- Flask-Migrate
-- Alembic
-- PostgreSQL via `psycopg2-binary`
-- `python-dotenv` for environment loading
+- LSA profile management and skill relationships
+- Skill-based LSA search
+- Pagination
+- SQLAlchemy ORM
+- PostgreSQL relational database
+- Flask-Migrate / Alembic database migrations
+- Booking creation and validation
+- Overlapping-session detection
+- Double-booking prevention for the same LSA
+- Separate payment entity and payment lifecycle
+- Mock third-party payment service
+- `requests`-based external API integration
+- External API timeout and exception handling
+- Payment webhook processing
+- Booking state transitions based on payment results
+- Application logging
+- Pytest test suite
+- PostgreSQL-backed GitHub Actions CI
+- Structured Git branching and pull-request workflow
+
+---
+
+## Architecture
+
+The application follows an MVC-style architecture adapted for a Flask REST API.
+
+```text
+Client
+  |
+  v
+Flask Routes / Controllers
+  |
+  v
+Service Layer
+  |
+  +--------------------+
+  |                    |
+  v                    v
+SQLAlchemy Models   External Services
+  |                    |
+  v                    v
+PostgreSQL          Mock Payment API
+```
+
+The API does not render server-side HTML. It returns JSON responses, so the application uses a controller/service/model separation rather than a template-oriented architecture.
+
+For the detailed MVC vs MVT discussion, database design, booking concurrency approach, payment flow, and query optimization, see:
+
+**[`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md)**
+
+---
+
+## Technology Stack
+
+| Category | Technology |
+|---|---|
+| Language | Python 3.12 |
+| Web framework | Flask |
+| ORM | SQLAlchemy |
+| Database | PostgreSQL |
+| Migrations | Flask-Migrate / Alembic |
+| HTTP client | Requests |
+| Testing | Pytest |
+| CI | GitHub Actions |
+| Version control | Git / GitHub |
+| Optional local containerization | Docker |
+
+---
 
 ## Project Structure
 
 ```text
 lsa-booking-backend/
+│
 ├── app/
-│   ├── __init__.py
+│   ├── models/
+│   ├── routes/
+│   ├── services/
 │   ├── config.py
 │   ├── extensions.py
-│   └── models/
-│       ├── booking.py
-│       ├── lsa.py
-│       ├── parent.py
-│       └── skill.py
-├── doc/
-│   ├── flow.md
-│   └── tasks.md
-├── migrations/
+│   └── __init__.py
+│
+├── mock_payment/
+│   └── app.py
+│
 ├── tests/
-├── requirements.txt
+│
+├── migrations/
+│   └── versions/
+│
+├── docs/
+│   └── TECHNICAL_DOCUMENTATION.md
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── seed.py
 ├── run.py
-└── seed.py
+├── requirements.txt
+├── .env.example
+├── .gitignore
+└── README.md
 ```
 
-## Data Model
+---
 
-### Parent
-- Stores parent identity and contact information
-- Has many booking requests
+# Quick Start
 
-### LSAProfile
-- Stores LSA identity, activity status, and hourly rate
-- Has many skills through the `lsa_skills` join table
-- Has many booking requests
+## Prerequisites
 
-### Skill
-- Reusable skill catalog such as `Autism`, `ADHD`, and `Reading Support`
+Install:
 
-### BookingRequest
-- Connects a parent to an LSA for a requested time range
-- Tracks booking status
-- Includes a composite index on `lsa_id`, `start_time`, and `end_time` to support booking conflict checks
+- Python 3.12
+- PostgreSQL
+- Git
+- pip
 
-## Current Database Flow
-
-1. App bootstraps through `create_app()`.
-2. Config loads `DATABASE_URL` from `.env`.
-3. SQLAlchemy initializes tables through Alembic migrations.
-4. `seed.py` inserts sample skills, parents, and LSAs.
-5. Future API routes will query these models for search and booking operations.
-
-More implementation detail is documented in [doc/flow.md](/home/vinay/project/lsa-booking-backend/doc/flow.md) and [doc/tasks.md](/home/vinay/project/lsa-booking-backend/doc/tasks.md).
-
-## Setup
-
-### 1. Create and activate a virtual environment
+Verify:
 
 ```bash
-python -m venv venv
+python3 --version
+psql --version
+git --version
+```
+
+## 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd lsa-booking-backend
+```
+
+## 2. Create a virtual environment
+
+```bash
+python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 2. Install dependencies
+## 3. Install dependencies
 
 ```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment variables
+## 4. Configure environment variables
 
-Create a `.env` file with:
+Copy the example file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your local PostgreSQL credentials and service URLs.
+
+Example:
 
 ```env
-DATABASE_URL=postgresql://username:password@localhost:5432/lsa_booking
+DATABASE_URL=postgresql://lsa_user:your_password@localhost:5432/lsa_booking
+TEST_DATABASE_URL=postgresql://lsa_user:your_password@localhost:5432/lsa_booking
+PAYMENT_SERVICE_URL=http://localhost:5001
+PAYMENT_WEBHOOK_URL=http://localhost:5000/api/payments/webhook/
 ```
 
-### 4. Run migrations
+## 5. Create the database
+
+Open PostgreSQL:
 
 ```bash
-flask db upgrade
+sudo -u postgres psql
 ```
 
-If the Flask app entry point is needed in your shell:
+Create the application user:
+
+```sql
+CREATE USER lsa_user WITH PASSWORD 'your_password';
+```
+
+Create the database:
+
+```sql
+CREATE DATABASE lsa_booking OWNER lsa_user;
+```
+
+Exit:
+
+```sql
+\q
+```
+
+## 6. Apply migrations
+
+Do not recreate the migration environment after cloning the repository.
+
+Run:
 
 ```bash
-export FLASK_APP=run.py
+flask --app run.py db upgrade
 ```
 
-### 5. Seed the database
+## 7. Load development data
 
 ```bash
 python seed.py
 ```
 
-### 6. Run the development server
+## 8. Start the API
 
 ```bash
 python run.py
 ```
 
-## Seed Data
+The default development API is expected at:
 
-The seed script currently inserts:
-- 3 parents
-- 4 LSA profiles
-- 6 skills
-- Skill-to-LSA assignments
+```text
+http://localhost:5000
+```
 
-It skips execution if parent data already exists, which prevents duplicate seed runs in a non-empty database.
+## 9. Start the mock payment service
 
-## API Direction
+In another terminal:
 
-The intended API surface for the next implementation stage is:
-- `GET /lsas` for list and skill-based filtering
-- `POST /bookings` for new booking requests
-- `GET /bookings/<id>` for booking details
-- Optional payment endpoints or webhook handlers depending on assignment scope
+```bash
+source venv/bin/activate
+python mock_payment/app.py
+```
 
-## Concurrency and Booking Safety
+The mock service is expected at:
 
-The booking model already supports the foundation for overlap checks, but conflict prevention still needs to be implemented in the service layer. The expected logic is:
-- validate the requested time range
-- check if the selected LSA is active
-- query overlapping bookings for the same LSA
-- reject conflicts before insert
-- wrap create operations in a transaction
+```text
+http://localhost:5001
+```
 
-## Testing
+---
 
-The `tests/` directory exists but does not yet contain automated coverage. Recommended first tests:
-- create valid parent and LSA records
-- attach skills to LSAs
-- create a valid booking request
-- reject booking overlaps
-- filter LSAs by skill and activity status
+# Database Setup
 
-## Notes
+The application uses PostgreSQL as its relational database.
 
-- The repository currently contains models and migration scaffolding, but not route, schema, or service modules yet.
-- The original lightweight `doc.md` has been replaced with a `doc/` folder so planning and system flow can live in separate documents.
+The main entities are:
 
-## Next References
+```text
+Parent
+   |
+   +----< BookingRequest >---- LSAProfile
+                                  |
+                                  +----< LSASkill >---- Skill
 
-- Task breakdown: [doc/tasks.md](/home/vinay/project/lsa-booking-backend/doc/tasks.md)
-- Request and booking lifecycle: [doc/flow.md](/home/vinay/project/lsa-booking-backend/doc/flow.md)
+BookingRequest
+   |
+   +---- Payment
+```
+
+The detailed schema, relationship rationale, constraints, and indexing strategy are documented in:
+
+**[`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md)**
+
+---
+
+# Migrations
+
+Migration files are version-controlled under:
+
+```text
+migrations/versions/
+```
+
+### Generate a migration after changing models
+
+```bash
+flask --app run.py db migrate -m "describe schema change"
+```
+
+Review the generated migration before applying it.
+
+### Apply migrations
+
+```bash
+flask --app run.py db upgrade
+```
+
+### View migration history
+
+```bash
+flask --app run.py db history
+```
+
+### Check current revision
+
+```bash
+flask --app run.py db current
+```
+
+> **Important:** `flask db migrate` creates a migration from model changes. `flask db upgrade` applies existing migrations. A developer cloning this repository normally needs `db upgrade`, not `db init`.
+
+---
+
+# Seed Data
+
+Development/sample records can be inserted using:
+
+```bash
+python seed.py
+```
+
+The seed script creates representative:
+
+- Parents
+- LSA profiles
+- Skills
+- LSA-skill associations
+
+Seed data is intended for development and testing only.
+
+---
+
+# Run the API
+
+Start the main Flask application:
+
+```bash
+python run.py
+```
+
+Expected development address:
+
+```text
+http://localhost:5000
+```
+
+---
+
+# Run Tests
+
+## 4. Run the test cases
+
+After the test database has been migrated:
+
+```bash
+pytest -q tests
+```
+
+For verbose output:
+
+```bash
+pytest -v tests
+```
+
+
+
+## Complete local testing workflow
+
+For a fresh test database, the complete sequence is:
+
+```bash
+export FLASK_CONFIG=testing
+
+flask db upgrade
+
+pytest -q tests
+```
+
+### Important
+
+The test suite should use `lsa_booking_test`, not the development database.
+
+```text
+                 Flask
+                   |
+          FLASK_CONFIG=testing
+                   |
+                   v
+          lsa_booking_test
+                   |
+          +--------+--------+
+          |                 |
+     flask db upgrade     pytest
+          |                 |
+          v                 v
+      Test schema       Test cases
+```
+
+Do not run the development seed script against the test database unless a particular test explicitly requires that data. Tests should normally create their own test data/fixtures.
+
+# CI
+
+The repository uses GitHub Actions to validate changes automatically.
+
+The CI workflow:
+
+```text
+Push / Pull Request
+        |
+        v
+Checkout repository
+        |
+        v
+Set up Python 3.12
+        |
+        v
+Start PostgreSQL 16
+        |
+        v
+Install dependencies
+        |
+        v
+Run database migrations
+        |
+        v
+Run Pytest
+        |
+        v
+PASS / FAIL
+```
+
+The CI PostgreSQL instance is temporary and isolated from the developer's local database.
+
+Workflow file:
+
+```text
+.github/workflows/ci.yml
+```
+
+---
+
+# API Overview
+
+The primary backend capabilities are:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/lsas/search/` | Search LSAs by skill with pagination |
+| `POST` | `/api/v1/bookings/` | Create a booking request |
+| `POST` | `/api/payments/webhook/` | Receive payment result events |
+
+The exact request/response contracts, validation rules, status codes, and examples are documented in:
+
+**[`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md)**
+
+---
+
+# Booking and Payment Flow
+
+A booking starts in a pending state.
+
+```text
+Create Booking
+      |
+      v
+Booking = PENDING
+      |
+      v
+Payment = PENDING
+      |
+      v
+Mock Payment Service
+      |
+      v
+Webhook
+      |
+  +---+---+
+  |       |
+SUCCESS  FAILED
+  |       |
+  v       v
+CONFIRMED  PAYMENT_FAILED
+```
+
+The application rejects overlapping sessions for the same LSA.
+
+Different LSAs can be booked at the same time.
+
+The detailed overlap rule, transaction behavior, payment integration, webhook lifecycle, and idempotency considerations are documented in the technical documentation.
+
+---
+
+# Technical Documentation
+
+The repository separates quick-start documentation from detailed engineering documentation.
+
+## Detailed technical documentation
+
+**[`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md)**
+
+It covers:
+
+- Architecture
+- MVC vs MVT
+- Flask architectural rationale
+- Database entities and relationships
+- API specifications
+- Request/response examples
+- Validation rules
+- N+1 query problem
+- `selectinload` optimization
+- Indexing strategy
+- Double-booking prevention
+- Transaction boundaries
+- Payment integration
+- Webhook architecture
+- Payment and booking state transitions
+- Exception handling
+- Logging
+- Database migrations
+- Testing strategy
+- GitHub Actions
+- Git branching
+- Pull-request workflow
+- Design decisions
+- Future production improvements
+
+---
+
+# Git Workflow
+
+The repository uses short-lived feature branches.
+
+Examples:
+
+```text
+feature/lsa-search
+feature/booking-api
+feature/payment-webhook
+fix/booking-overlap
+test/payment-webhook
+docs/api-documentation
+ci/github-actions
+```
+
+Typical workflow:
+
+```bash
+git checkout main
+git pull origin main
+
+git checkout -b feature/booking-api
+
+git add .
+git commit -m "feat: add booking API"
+
+git push -u origin feature/booking-api
+```
+
+Open a Pull Request against `main`.
+
+GitHub Actions should pass before merging.
+
+Detailed branching and PR conventions are documented in:
+
+**[`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md)**
+
+---
+
+# Environment and Secrets
+
+Never commit `.env` or real secrets.
+
+Use:
+
+```text
+.env.example
+```
+
+for documenting required configuration.
+
+`.gitignore` should include:
+
+```gitignore
+.env
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+.idea/
+.vscode/
+```
+
+Never log or commit:
+
+- Passwords
+- API keys
+- Access tokens
+- Payment secrets
+- Card information
+- CVV
+
+---
+
+# Design Principles
+
+The project follows these principles:
+
+- Keep HTTP concerns inside routes/controllers.
+- Keep business rules in services.
+- Keep persistence concerns in SQLAlchemy models.
+- Keep schema changes in version-controlled migrations.
+- Validate input before persistence.
+- Use transactions for related state changes.
+- Prevent N+1 database access.
+- Use timeouts for external HTTP calls.
+- Handle external-service failures explicitly.
+- Treat webhook events as asynchronous state changes.
+- Keep payment state separate from booking state.
+- Test both successful and failure paths.
+- Automate testing through CI.
+- Keep commits focused and pull requests reviewable.
+
+---
+
+# Further Reading
+
+For complete implementation details, see:
+
+**[`docs/TECHNICAL_DOCUMENTATION.md`](docs/TECHNICAL_DOCUMENTATION.md)**
