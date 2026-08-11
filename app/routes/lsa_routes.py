@@ -4,7 +4,7 @@ from sqlalchemy.orm import selectinload
 from app.models.lsa import LSAProfile
 from app.models.skill import Skill
 
-lsa_bp = Blueprint("lsa", __name__)
+lsa_bp = Blueprint("lsa", __name__, url_prefix="/api/lsas")
 
 
 def serialize_lsa(lsa):
@@ -25,7 +25,7 @@ def serialize_lsa(lsa):
     }
 
 
-@lsa_bp.get("/lsas")
+@lsa_bp.get("/search")
 def list_lsas():
     skill_name = request.args.get("skill")
     skill_id = request.args.get("skill_id", type=int)

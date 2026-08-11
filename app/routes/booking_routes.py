@@ -1,15 +1,19 @@
 from datetime import datetime
-
-from flask import Blueprint, jsonify, request
-
+from decimal import Decimal
+from flask import Blueprint, jsonify, request, current_app
 from app.extensions import db
 from app.models.booking import BookingRequest
 from app.models.lsa import LSAProfile
 from app.models.parent import Parent
+from app.models.payment import Payment
+from app.services.payment import create_payment, PaymentServiceError
+import logging
+
+logger = logging.getLogger(__name__)
 
 booking_bp = Blueprint("booking", __name__)
 
-CONFLICT_STATUSES = {"PENDING", "CONFIRMED"}
+CONFLICT_STATUSES = {"PENDING", "COMPLETED"}
 
 
 def error_response(message, status_code):
@@ -34,6 +38,9 @@ def parse_iso_datetime(value, field_name):
 
     return parsed
 
+def calculate_amount(lsa, start_time, end_time):
+    hours = Decimal(str((end_time - start_time).total_seconds())) / Decimal("3600")
+    return (Decimal(lsa.hourly_rate) * hours).quantize(Decimal("0.01"))
 
 def serialize_booking(booking):
     return {
@@ -120,11 +127,60 @@ def create_booking():
         status="PENDING",
     )
 
+    amount = calculate_amount(lsa, start_time, end_time)    
+    print(f"Calculated amount: {amount}")
     db.session.add(booking)
+    db.session.flush()
+
+    payment = Payment(
+        booking_id=booking.id,
+        amount=amount,
+        status="PENDING",
+    )
+    
+
+    db.session.add(payment)
     db.session.commit()
+
+    try:
+        payment_result = create_payment(
+            current_app.config["PAYMENT_SERVICE_URL"],
+            current_app.config["PAYMENT_WEBHOOK_URL"],
+            booking.id,
+            amount,
+        )
+    except PaymentServiceError as exc:
+        logger.error("Payment initiation failed for booking_id=%s", booking.id)
+        payment.status = "FAILED"
+        booking.status = "FAILED"
+        db.session.commit()
+        return {
+            "error": {
+                "code": "PAYMENT_SERVICE_ERROR",
+                "message": str(exc),
+                "booking_id": booking.id,
+            }
+        }, 502
+
+
+    db.session.refresh(payment)
     db.session.refresh(booking)
 
-    return jsonify({"data": serialize_booking(booking)}), 201
+    return {
+        "data": {
+            "booking_id": booking.id,
+            "booking_status": booking.status,
+            "payment": {
+                "payment_id": payment.id,
+                "external_payment_id": payment.external_payment_id,
+                "amount": float(payment.amount),
+                    "payment_status": payment.status,
+                },
+        }
+    }, 201
+    
+
+    
 
 
 @booking_bp.get("/bookings/<int:booking_id>")

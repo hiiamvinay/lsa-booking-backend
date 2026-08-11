@@ -9,6 +9,7 @@ from app.models.payment import Payment
 from app.models.booking import BookingRequest
 from app.routes.booking_routes import booking_bp
 from app.routes.lsa_routes import lsa_bp
+from app.routes.payment import payments_bp
 from dotenv import load_dotenv
 import os
 
@@ -26,5 +27,6 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     app.register_blueprint(lsa_bp)
     app.register_blueprint(booking_bp)
+    app.register_blueprint(payments_bp)
 
     return app

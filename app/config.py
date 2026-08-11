@@ -6,6 +6,9 @@ load_dotenv()
 
 class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL")
+    PAYMENT_WEBHOOK_URL = os.getenv("PAYMENT_WEBHOOK_URL")
+   
 
 class DevelopmentConfig(Config):
     DEBUG = True
