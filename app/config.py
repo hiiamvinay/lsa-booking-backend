@@ -8,7 +8,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL")
     PAYMENT_WEBHOOK_URL = os.getenv("PAYMENT_WEBHOOK_URL")
-   
+    PAYMENT_WEBHOOK_SECRET = os.getenv("PAYMENT_WEBHOOK_SECRET", "change-me")
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -25,6 +25,6 @@ class ProductionConfig(Config):
 
 config = {
     "development": DevelopmentConfig,
-    "tesdevelopmentting": TestingConfig,
+    "testing": TestingConfig,
     "production": ProductionConfig,
 }
