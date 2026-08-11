@@ -119,14 +119,7 @@ MVT is particularly useful for applications where the framework renders HTML tem
 
 This application is backend-only and exposes REST APIs. It does not require a server-side HTML template layer.
 
-The primary output is JSON:
 
-```json
-{
-  "data": [],
-  "pagination": {}
-}
-```
 
 Therefore, an MVC-style Flask design provides a clear separation:
 
@@ -452,22 +445,20 @@ The API is JSON-based.
 ### Endpoint
 
 ```http
-GET /api/v1/lsas/search/
+GET /api/lsas/search/
 ```
 
 ### Query parameters
 
 ```text
 skill
-page
-per_page
-include_inactive
+skill_id
 ```
 
 Example:
 
 ```http
-GET /api/v1/lsas/search/?skill=Autism&page=1&per_page=10
+GET /api/v1/lsas/search/?skill=Autism
 ```
 
 ### Behavior
@@ -496,13 +487,9 @@ The endpoint should:
         "Reading Support"
       ]
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "per_page": 10,
-    "total": 1
-  }
+  ]
 }
+ 
 ```
 
 ### Errors
@@ -519,7 +506,7 @@ The endpoint should:
 ### Endpoint
 
 ```http
-POST /api/v1/bookings/
+POST /api/bookings/
 ```
 
 ### Request
