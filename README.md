@@ -463,8 +463,8 @@ The primary backend capabilities are:
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| `GET` | `/api/v1/lsas/search/` | Search LSAs by skill with pagination |
-| `POST` | `/api/v1/bookings/` | Create a booking request |
+| `GET` | `/api/lsas/search/` | Search LSAs by skill with pagination |
+| `POST` | `/api/bookings/` | Create a booking request |
 | `POST` | `/api/payments/webhook/` | Receive payment result events |
 
 The exact request/response contracts, validation rules, status codes, and examples are documented in:
