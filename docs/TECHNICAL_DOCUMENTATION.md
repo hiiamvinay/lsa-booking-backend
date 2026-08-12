@@ -30,6 +30,16 @@ SQLAlchemy Models      External Services
      |                      |
      v                      v
 PostgreSQL             Mock Payment API
+                            |
+                            | Payment Result
+                            v
+                     Payment Webhook  (api/payment/webhhook
+                            |
+                            v
+                     Payment Service
+                            |
+                            v
+                       PostgreSQL
 ```
 
 ### Route / Controller Layer
@@ -458,7 +468,7 @@ skill_id
 Example:
 
 ```http
-GET /api/v1/lsas/search/?skill=Autism
+GET /api/lsas/search/?skill=Autism
 ```
 
 ### Behavior
@@ -513,43 +523,65 @@ POST /api/bookings/
 
 ```json
 {
-  "parent_id": 1,
-  "lsa_id": 3,
-  "start_time": "2026-08-12T10:00:00+00:00",
-  "end_time": "2026-08-12T11:00:00+00:00"
+  "parent_id": 2,
+  "lsa_id": 2,
+  "start_time": "2026-08-12T08:00:00+00:00",
+  "end_time": "2026-08-12T09:00:00+00:00"
 }
 ```
 
 ### Validation sequence
 
 ```text
-Request body
-    |
-    v
-Required fields
-    |
-    v
-Datetime parsing
-    |
-    v
+Request Body
+    │
+    ▼
+Required Fields
+    │
+    ▼
+Datetime Parsing
+    │
+    ▼
 start_time < end_time
-    |
-    v
-Parent exists
-    |
-    v
-LSA exists
-    |
-    v
-LSA is bookable
-    |
-    v
-Overlap check
-    |
-    v
-Create booking
+    │
+    ▼
+Parent Exists
+    │
+    ▼
+LSA Exists
+    │
+    ▼
+LSA is Bookable
+    │
+    ▼
+Overlap Check
+    │
+    ▼
+Create Booking
+    │
+    ▼
+Booking = PENDING
+    │
+    ▼
+Create Payment
+    │
+    ▼
+Call Mock Payment Service
+    │
+    ▼
+Payment Webhook (api/payment/webhook)
+    │
+    ▼
+Payment Service
+    │
+    ├───────────────┐
+    ▼               ▼
+COMPLETED         FAILED
+    │               │
+    ▼               ▼
+Booking           Booking
+COMPLETED         FAILED
 ```
-
 ### Success
 
 ```http
@@ -560,12 +592,16 @@ Example:
 
 ```json
 {
-  "id": 101,
-  "parent_id": 1,
-  "lsa_id": 3,
-  "status": "PENDING",
-  "start_time": "2026-08-12T10:00:00+00:00",
-  "end_time": "2026-08-12T11:00:00+00:00"
+  "data": {
+    "booking_id": 14,
+    "booking_status": "COMPLETED",
+    "payment": {
+      "amount": 900.0,
+      "external_payment_id": "pay_6436c8ef6273",
+      "payment_id": 14,
+      "payment_status": "COMPLETED"
+    }
+  }
 }
 ```
 
