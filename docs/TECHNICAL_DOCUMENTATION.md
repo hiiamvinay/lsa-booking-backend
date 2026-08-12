@@ -33,7 +33,7 @@ PostgreSQL             Mock Payment API
                             |
                             | Payment Result
                             v
-                     Payment Webhook  (api/payment/webhhook
+                     Payment Webhook  (/api/payment/webhhook)
                             |
                             v
                      Payment Service
