@@ -57,24 +57,31 @@ The project is built as a Flask backend with PostgreSQL and SQLAlchemy. It demon
 The application follows an MVC-style architecture adapted for a Flask REST API.
 
 ```text
-Client
-  |
-  v
-Flask Routes / Controllers
-  |
-  v
+HTTP Request
+     |
+     v
+Route / Controller
+     |
+     v
 Service Layer
-  |
-  +--------------------+
-  |                    |
-  v                    v
-SQLAlchemy Models   External Services
-  |                    |
-  v                    v
-PostgreSQL          Mock Payment API
-                       |  Webhook 
-                       v
-                    Payment Service
+     |
+     +----------------------+
+     |                      |
+     v                      v
+SQLAlchemy Models      External Services
+     |                      |
+     v                      v
+PostgreSQL             Mock Payment API
+                            |
+                            | Payment Result
+                            v
+                     Payment Webhook
+                            |
+                            v
+                     Payment Service
+                            |
+                            v
+                       PostgreSQL
 ```
 
 The API does not render server-side HTML. It returns JSON responses, so the application uses a controller/service/model separation rather than a template-oriented architecture.
