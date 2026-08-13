@@ -224,6 +224,8 @@ Create the database:
 
 ```sql
 CREATE DATABASE lsa_booking OWNER lsa_user;
+CREATE DATABASE lsa_booking_test OWNER lsa_user;
+
 ```
 
 Exit:
