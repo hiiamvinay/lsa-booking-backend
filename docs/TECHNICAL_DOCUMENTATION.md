@@ -783,25 +783,9 @@ The first approach allows PostgreSQL to perform the filtering.
 
 ---
 
-## 6.5 Pagination
 
-Pagination prevents the API from loading an unbounded number of records.
 
-Conceptually:
-
-```text
-page = 1
-per_page = 20
-
-OFFSET = (page - 1) * per_page
-LIMIT = 20
-```
-
-The API should validate page and page-size values and enforce a reasonable maximum page size.
-
----
-
-## 6.6 Indexes
+## 6.4 Indexes
 
 Indexes should correspond to real query patterns.
 
@@ -1042,29 +1026,6 @@ Payment Service
 Main API
 ```
 
-The webhook does not call the payment creation operation again.
-
-Therefore:
-
-```text
-Main API
-   |
-   v
-Payment Service
-   |
-   v
-Webhook
-   |
-   v
-Update Database
-   |
-   v
-DONE
-```
-
-There is no loop.
-
----
 
 ## 9.1 State transitions
 
@@ -1545,7 +1506,7 @@ Known limitations
 ```markdown
 ## Summary
 
-- Added POST /api/v1/bookings/
+- Added POST /api/bookings/
 - Added request validation.
 - Added overlap detection.
 - Added 409 conflict response.
