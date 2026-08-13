@@ -1,5 +1,7 @@
 # LSA Service Booking Backend
 
+> **Created By: Vinay Daharwal**
+
 Production-style REST API for managing Learning Support Assistant (LSA) discovery, booking, and payment workflows.
 
 The project is built as a Flask backend with PostgreSQL and SQLAlchemy. It demonstrates relational data modeling, REST API design, booking conflict prevention, third-party payment integration, webhook-driven state transitions, automated testing, logging, migrations, and GitHub Actions CI.
