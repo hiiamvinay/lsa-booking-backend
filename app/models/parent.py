@@ -32,8 +32,7 @@ class Parent(db.Model):
 
     bookings = db.relationship(
         "BookingRequest",
-        back_populates="parent",
-        lazy="select"
+        back_populates="parent"
     )
 
     def __repr__(self):

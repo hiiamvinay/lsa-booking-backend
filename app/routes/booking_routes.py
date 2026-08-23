@@ -128,7 +128,7 @@ def create_booking():
     )
 
     amount = calculate_amount(lsa, start_time, end_time)    
-    print(f"Calculated amount: {amount}")
+    #print(f"Calculated amount: {amount}")
     db.session.add(booking)
     db.session.flush()
 
