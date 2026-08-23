@@ -113,6 +113,22 @@ def test_get_lsas_returns_only_active_lsas_by_default(client, seed_data):
     assert payload["data"][0]["id"] == seed_data["active_lsa_id"]
     assert payload["data"][0]["is_active"] is True
 
+def test_get_lsas_by_skill_returns_only_active_lsas_with_that_skill(client, seed_data):
+    response = client.get("/api/lsas/search?skill=Reading Support")
+
+    assert response.status_code == 200
+    payload = response.get_json()
+
+    assert payload["count"] == 1
+    assert payload["data"][0]["id"] == seed_data["active_lsa_id"]
+    assert payload["data"][0]["is_active"] is True
+    # Atleast one of the skills should match "Reading Support"
+    reading_support_skill_found = False
+    for i in payload["data"][0]["skills"]:
+        if i["name"] == "Reading Support":
+            reading_support_skill_found = True
+            break
+    assert reading_support_skill_found is True
 
 def test_post_bookings_completes_booking_when_payment_completes(app, client, seed_data, monkeypatch):
     def fake_create_payment(payment_service_url, webhook_url, booking_id, amount):
