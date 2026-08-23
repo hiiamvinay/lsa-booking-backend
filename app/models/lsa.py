@@ -50,7 +50,6 @@ class LSAProfile(db.Model):
     bookings = db.relationship(
         "BookingRequest",
         back_populates="lsa",
-        lazy="select"
     )
 
     def __repr__(self):

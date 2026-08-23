@@ -202,10 +202,11 @@ Edit `.env` with your local PostgreSQL credentials and service URLs.
 Example:
 
 ```env
-DATABASE_URL=postgresql://lsa_user:your_password@localhost:5432/lsa_booking
-TEST_DATABASE_URL=postgresql://lsa_user:your_password@localhost:5432/lsa_booking
+DATABASE_URL=postgresql://user:password@localhost:5432/lsa_booking
+TEST_DATABASE_URL=postgresql://user:password@localhost:5432/lsa_booking_test
 PAYMENT_SERVICE_URL=http://localhost:5001
-PAYMENT_WEBHOOK_URL=http://localhost:5000/api/payments/webhook/
+PAYMENT_WEBHOOK_URL=http://localhost:5000/api/payments/webhook
+FLASK_CONFIG=production
 ```
 
 ## 5. Create the database
@@ -478,7 +479,7 @@ The primary backend capabilities are:
 | Method | Endpoint | Purpose |
 |---|---|---|
 | `GET` | `/api/lsas/search/` | Search LSAs by skill with pagination |
-| `POST` | `/api/bookings/` | Create a booking request |
+| `POST` | `/api/bookings/`   | Create a booking request |
 | `POST` | `/api/payments/webhook/` | Receive payment result events |
 
 The exact request/response contracts, validation rules, status codes, and examples are documented in:

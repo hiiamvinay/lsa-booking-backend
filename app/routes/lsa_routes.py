@@ -30,6 +30,11 @@ def list_lsas():
     skill_name = request.args.get("skill")
     skill_id = request.args.get("skill_id", type=int)
     include_inactive = request.args.get("include_inactive", "").lower() == "true"
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+
+    if per_page > 50:
+        per_page = 50  
 
     query = LSAProfile.query.options(selectinload(LSAProfile.skills))
 
@@ -41,11 +46,12 @@ def list_lsas():
     elif skill_name:
         query = query.join(LSAProfile.skills).filter(Skill.name.ilike(skill_name.strip()))
 
-    lsas = query.order_by(LSAProfile.name.asc()).all()
-
+    lsas = query.order_by(LSAProfile.name.asc()).paginate(page=page, per_page=per_page).items
     return jsonify(
         {
             "data": [serialize_lsa(lsa) for lsa in lsas],
             "count": len(lsas),
+            "page": page,
+            "per_page": per_page,
         }
     )

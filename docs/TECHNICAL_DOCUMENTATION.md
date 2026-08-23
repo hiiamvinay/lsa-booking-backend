@@ -463,12 +463,14 @@ GET /api/lsas/search/
 ```text
 skill
 skill_id
+page
+per_page
 ```
 
 Example:
 
 ```http
-GET /api/lsas/search/?skill=Autism
+GET /api/lsas/search/?skill=ADHD
 ```
 
 ### Behavior
@@ -486,20 +488,35 @@ The endpoint should:
 
 ```json
 {
+  "count": 1,
   "data": [
     {
-      "id": 1,
-      "name": "Amit Kumar",
-      "email": "amit.lsa@example.com",
-      "hourly_rate": 800,
+      "created_at": "2026-08-10T22:22:25.265491+05:30",
+      "email": "ravi.lsa@example.com",
+      "hourly_rate": 750.0,
+      "id": 3,
+      "is_active": true,
+      "name": "Ravi Mehta",
       "skills": [
-        "Autism",
-        "Reading Support"
+        {
+          "id": 3,
+          "name": "ADHD"
+        },
+        {
+          "id": 1,
+          "name": "Autism"
+        },
+        {
+          "id": 4,
+          "name": "Reading Support"
+        }
       ]
     }
-  ]
+  ],
+  "page": 1,
+  "per_page": 10
 }
- 
+
 ```
 
 ### Errors
@@ -613,6 +630,7 @@ Example:
 404 LSA_NOT_FOUND
 409 BOOKING_CONFLICT
 500 INTERNAL_ERROR
+502 EXTERNAL PAYMENT SERVICE ERROR
 ```
 
 Example:
