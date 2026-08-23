@@ -890,37 +890,8 @@ If both conditions are true, the intervals overlap.
 
 ---
 
-## 7.3 Transaction boundary
 
-A booking operation should be treated as a database transaction:
-
-```text
-BEGIN
-  |
-  +-- validate parent
-  |
-  +-- validate LSA
-  |
-  +-- check conflict
-  |
-  +-- create booking
-  |
-  +-- create payment
-  |
-COMMIT
-```
-
-On failure:
-
-```text
-ROLLBACK
-```
-
-This prevents partially created records.
-
----
-
-## 7.4 Concurrency consideration
+## 7.3 Concurrency consideration
 
 A simple application-level "check then insert" can still have a race condition if two requests execute simultaneously:
 
