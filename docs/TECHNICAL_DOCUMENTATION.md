@@ -212,6 +212,61 @@ The integration explicitly handles:
 
 # 4. Database Design
 
+┌─────────────────┐
+│     parents     │
+├─────────────────┤
+│ PK id           │
+│ name            │
+│ email           │
+│ phone           │
+│ created_at      │
+└────────┬────────┘
+         │
+         │ 1:N
+         ▼
+┌─────────────────────────┐
+│    booking_requests     │
+├─────────────────────────┤
+│ PK id                   │
+│ FK parent_id            │
+│ FK lsa_id               │
+│ start_time              │
+│ end_time                │
+│ status                  │
+│ amount                  │
+│ created_at              │
+└───────┬─────────┬───────┘
+        │         │
+        │ N:1     │ 1:1
+        ▼         ▼
+┌──────────────┐  ┌─────────────────┐
+│ lsa_profiles │  │    payments     │
+├──────────────┤  ├─────────────────┤
+│ PK id        │  │ PK id           │
+│ name         │  │ FK booking_id   │
+│ email        │  │ external_id     │
+│ hourly_rate  │  │ amount          │
+│ is_active    │  │ status          │
+│ created_at   │  │ created_at      │
+└──────┬───────┘  │ updated_at      │
+       │          └─────────────────┘
+       │ N:M
+       ▼
+┌──────────────┐
+│  lsa_skills  │
+├──────────────┤
+│ PK/FK lsa_id │
+│ PK/FK skill_id│
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│    skills    │
+├──────────────┤
+│ PK id        │
+│ name         │
+└──────────────┘
+
 ## 4.1 Entity Relationship
 
 ```text
@@ -749,6 +804,22 @@ query = LSAProfile.query.options(
     selectinload(LSAProfile.skills)
 )
 ```
+which is equivalent to 
+
+```sql
+SELECT
+    lsa_skills.lsa_id,
+    skills.id,
+    skills.name
+FROM skills
+JOIN lsa_skills
+    ON skills.id = lsa_skills.skill_id
+WHERE lsa_skills.lsa_id IN (
+    SELECT id
+    FROM lsa_profiles
+);
+
+```
 
 Conceptually:
 
@@ -818,6 +889,9 @@ booking_requests.start_time
 booking_requests.end_time
 payments.booking_id
 payments.external_payment_id
+```
+```text
+skill.name
 ```
 
 ### Booking conflict queries
