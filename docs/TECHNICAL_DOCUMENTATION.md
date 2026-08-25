@@ -212,6 +212,7 @@ The integration explicitly handles:
 
 # 4. Database Design
 
+```text
 ┌─────────────────┐
 │     parents     │
 ├─────────────────┤
@@ -266,6 +267,7 @@ The integration explicitly handles:
 │ PK id        │
 │ name         │
 └──────────────┘
+```
 
 ## 4.1 Entity Relationship
 
@@ -413,6 +415,40 @@ LSA 1 -> ADHD
 LSA 1 -> Reading Support
 
 LSA 2 -> Autism
+```
+Sample Table to understand the relationship
+
+```txt
+
+lsa_profiles                 skills
+┌────┬─────────────┐         ┌────┬─────────────────┐
+│ id │ name        │         │ id │ name            │
+├────┼─────────────┤         ├────┼─────────────────┤
+│ 1  │ Amit Kumar  │         │ 1  │ Autism          │
+│ 2  │ Neha Singh  │         │ 2  │ Dyslexia        │
+│ 3  │ Ravi Mehta  │         │ 3  │ ADHD            │
+│ 4  │ Sneha Patel │         │ 4  │ Reading Support │
+└────┴─────────────┘         │ 5  │ Mathematics     │
+                             │ 6  │ Speech Support  │
+                             └────┴─────────────────┘
+                  │
+                  │
+                  ▼
+             lsa_skills
+          ┌─────────┬──────────┐
+          │ lsa_id  │ skill_id │
+          ├─────────┼──────────┤
+          │    1    │    1     │
+          │    1    │    4     │
+          │    2    │    2     │
+          │    2    │    5     │
+          │    3    │    1     │
+          │    3    │    3     │
+          │    3    │    4     │
+          │    4    │    6     │
+          │    4    │    1     │
+          └─────────┴──────────┘
+
 ```
 
 ---
